@@ -23,103 +23,124 @@ function formatShort(date){return date.toLocaleDateString(undefined,{weekday:'sh
 function formatTime(date){return date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});}
 function toDate(d){return typeof d==='string'?new Date(d):d;}
 
-// -------------- Fetch live earnings via Vercel API -----------------
+// ----------------- Fetch earnings -----------------
 async function fetchEarnings() {
-    try {
-        const res = await fetch("https://<your-vercel-app>.vercel.app/api/fetchEarnings");
-        const data = await res.json();
-        return data.map(item => ({
-            ...item,
-            datetime: item.date + "T09:00" // placeholder time
-        }));
-    } catch(e) {
-        console.error("Failed to fetch earnings:", e);
-        return [];
-    }
+  try {
+    const res = await fetch("/api/fetchEarnings");
+    const data = await res.json();
+    const text = data.rawText || "";
+    return parseEarningsText(text);
+  } catch(e) {
+    console.error("Failed to fetch earnings:", e);
+    return [];
+  }
 }
 
-// ------------- Rendering -----------------
+// Parse DATA_ROW text into structured objects
+function parseEarningsText(text) {
+  const reports = [];
+  const lines = text.split("\n");
+  const regex = /^DATA_ROW:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)$/i;
+  lines.forEach(line=>{
+    const match = line.trim().match(regex);
+    if(match){
+      const [, dateStr, ticker, company, sector, timeStr, iv] = match;
+      let time = "Unknown";
+      if(/BMO|BEFORE/i.test(timeStr)) time="BMO";
+      if(/AMC|AFTER/i.test(timeStr)) time="AMC";
+      reports.push({
+        id: `${ticker}-${Date.now()}-${Math.random()}`,
+        date: dateStr.trim(),
+        ticker: ticker.trim().toUpperCase(),
+        companyName: company.trim(),
+        sector: sector.trim(),
+        time,
+        iv: iv.trim()
+      });
+    }
+  });
+  return reports;
+}
+
+// ----------------- Render calendar -----------------
 function groupByWeek(data, weekStart){
-    const days = Array.from({length:7},()=>({BMO:[],AMC:[]}));
-    data.forEach(item=>{
-        const dt=toDate(item.datetime);
-        for(let i=0;i<7;i++){
-            const day = addDays(weekStart,i);
-            if(sameDay(day,dt)){
-                if(item.time==="BMO") days[i].BMO.push(item);
-                else days[i].AMC.push(item);
-            }
-        }
-    });
-    return days;
+  const days = Array.from({length:7},()=>({BMO:[],AMC:[]}));
+  data.forEach(item=>{
+    const dt = toDate(item.date);
+    for(let i=0;i<7;i++){
+      const day = addDays(weekStart,i);
+      if(sameDay(day, dt)){
+        if(item.time==="BMO") days[i].BMO.push(item);
+        else days[i].AMC.push(item);
+      }
+    }
+  });
+  return days;
 }
 
 function renderCalendar(data){
-    calendarEl.innerHTML="";
-    const days = groupByWeek(data,currentWeekStart);
+  calendarEl.innerHTML="";
+  const days = groupByWeek(data,currentWeekStart);
 
-    for(let i=0;i<7;i++){
-        const dayDate = addDays(currentWeekStart,i);
+  for(let i=0;i<7;i++){
+    const dayDate = addDays(currentWeekStart,i);
+    const dayRow = document.createElement('div');
+    dayRow.className='day';
 
-        const dayRow = document.createElement('div');
-        dayRow.className = 'day';
+    const header = document.createElement('div');
+    header.className='day-header';
+    header.innerHTML=`<div>${formatShort(dayDate)}</div><div>${dayDate.toLocaleDateString()}</div>`;
+    dayRow.appendChild(header);
 
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        header.innerHTML = `<div>${formatShort(dayDate)}</div><div>${dayDate.toLocaleDateString()}</div>`;
-        dayRow.appendChild(header);
-
-        ["BMO","AMC"].forEach(sessionType=>{
-            const session = document.createElement('div');
-            session.className='session';
-            session.innerHTML=`<h4>${sessionType==="BMO"?"Before Market":"After Market"} (${sessionType})</h4>`;
-            if(days[i][sessionType].length===0){
-                const e = document.createElement('div'); e.className='empty';
-                e.textContent=`— No ${sessionType} reports`;
-                session.appendChild(e);
-            } else {
-                days[i][sessionType].forEach(item=>{
-                    session.appendChild(createCompanyCard(item));
-                });
-            }
-            dayRow.appendChild(session);
+    ["BMO","AMC"].forEach(sessionType=>{
+      const session = document.createElement('div');
+      session.className='session';
+      session.innerHTML=`<h4>${sessionType==="BMO"?"Before Market":"After Market"} (${sessionType})</h4>`;
+      if(days[i][sessionType].length===0){
+        const e = document.createElement('div'); e.className='empty';
+        e.textContent=`— No ${sessionType} reports`;
+        session.appendChild(e);
+      } else {
+        days[i][sessionType].forEach(item=>{
+          session.appendChild(createCompanyCard(item));
         });
+      }
+      dayRow.appendChild(session);
+    });
 
-        calendarEl.appendChild(dayRow);
-    }
+    calendarEl.appendChild(dayRow);
+  }
 
-    weekPicker.value = currentWeekStart.toISOString().slice(0,10);
-    detailsPanel.innerHTML=`<div style="color:var(--muted)">Click a company for details</div>`;
+  weekPicker.value = currentWeekStart.toISOString().slice(0,10);
+  detailsPanel.innerHTML=`<div style="color:var(--muted)">Click a company for details</div>`;
 }
 
 function createCompanyCard(item){
-    const card = document.createElement('div'); card.className='card'; card.tabIndex=0;
-    const badge = document.createElement('div'); badge.className='badge ' + (item.time==='BMO'?'bmo':'amc'); badge.textContent=item.ticker;
-    const meta = document.createElement('div'); meta.className='meta';
-    meta.innerHTML=`<div class="row"><div class="ticker">${item.companyName}</div><div class="sector">${item.sector}</div></div>
-                     <div class="row"><div class="time">${item.time} • ${formatTime(toDate(item.datetime))}</div>
-                     <div class="iv">IV: ${item.iv}</div></div>`;
-    card.appendChild(badge); card.appendChild(meta);
-    card.addEventListener('click',()=>showDetails(item));
-    card.addEventListener('keypress', e=>{if(e.key==='Enter') showDetails(item);});
-    return card;
+  const card = document.createElement('div'); card.className='card'; card.tabIndex=0;
+  const badge = document.createElement('div'); badge.className='badge ' + (item.time==='BMO'?'bmo':'amc'); badge.textContent=item.ticker;
+  const meta = document.createElement('div'); meta.className='meta';
+  meta.innerHTML=`<div class="row"><div class="ticker">${item.companyName}</div><div class="sector">${item.sector}</div></div>
+                    <div class="row"><div class="time">${item.time}</div><div class="iv">IV: ${item.iv}</div></div>`;
+  card.appendChild(badge); card.appendChild(meta);
+  card.addEventListener('click',()=>showDetails(item));
+  card.addEventListener('keypress', e=>{if(e.key==='Enter') showDetails(item);});
+  return card;
 }
 
 function showDetails(item){
-    const dt = toDate(item.datetime);
-    detailsPanel.innerHTML = `<h3>${item.companyName} (${item.ticker})</h3>
-        <div>${item.sector} • ${item.time} • ${formatShort(dt)} ${formatTime(dt)}</div>
-        <div>IV: ${item.iv}</div>`;
+  detailsPanel.innerHTML = `<h3>${item.companyName} (${item.ticker})</h3>
+      <div>${item.sector} • ${item.time} • ${item.date}</div>
+      <div>IV: ${item.iv}</div>`;
 }
 
-// ------------- Controls -----------------
+// ----------------- Controls -----------------
 prevBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,-7);renderCalendar(earningsData);});
 nextBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,7);renderCalendar(earningsData);});
 todayBtn.addEventListener('click',()=>{currentWeekStart=startOfWeek(new Date());renderCalendar(earningsData);});
 weekPicker.addEventListener('change', e=>{const d=new Date(e.target.value);if(!isNaN(d)){currentWeekStart=startOfWeek(d);renderCalendar(earningsData);}});
 
-// ------------- Init -----------------
+// ----------------- Init -----------------
 (async function init(){
-    earningsData = await fetchEarnings();
-    renderCalendar(earningsData);
+  earningsData = await fetchEarnings();
+  renderCalendar(earningsData);
 })();
