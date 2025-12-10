@@ -115,4 +115,19 @@ function createCompanyCard(item){
 function showDetails(item){
     const dt = toDate(item.datetime);
     detailsPanel.innerHTML = `<h3>${item.company} (${item.ticker})</h3>
-        <div>${item.sector} • ${formatShort(dt)} ${formatTime(dt
+        <div>${item.sector} • ${formatShort(dt)} ${formatTime(dt)}</div>
+        <div>EPS: ${item.epsActual || "N/A"} / ${item.epsEstimated || "N/A"}</div>
+        <div>Revenue: ${item.revenueActual || "N/A"} / ${item.revenueEstimated || "N/A"}</div>`;
+}
+
+// ------------- Controls -----------------
+prevBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,-7);renderCalendar(earningsData);});
+nextBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,7);renderCalendar(earningsData);});
+todayBtn.addEventListener('click',()=>{currentWeekStart=startOfWeek(new Date());renderCalendar(earningsData);});
+weekPicker.addEventListener('change', e=>{const d=new Date(e.target.value);if(!isNaN(d)){currentWeekStart=startOfWeek(d);renderCalendar(earningsData);}});
+
+// ------------- Init -----------------
+(async function init(){
+    earningsData = await fetchEarnings();
+    renderCalendar(earningsData);
+})();
