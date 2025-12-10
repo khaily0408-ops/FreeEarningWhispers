@@ -25,42 +25,39 @@ function formatShort(date){return date.toLocaleDateString(undefined,{weekday:'sh
 function formatTime(date){return date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});}
 function toDate(d){return typeof d==='string'?new Date(d):d;}
 
-// -------------- Fetch FMP v5 Earnings -----------------
+// -------------- Fetch FMP Earnings (v5 stable) -----------------
 async function fetchEarnings() {
     const today = new Date();
-    const from = addDays(today,-7).toISOString().slice(0,10);
+    const from = today.toISOString().slice(0,10);
     const to = addDays(today,14).toISOString().slice(0,10);
-    const url = `https://financialmodelingprep.com/api/v5/earnings-calendar?from=${from}&to=${to}&apikey=${API_KEY}`;
+    const url = `https://financialmodelingprep.com/stable/earnings-calendar?from=${from}&to=${to}&apikey=${API_KEY}`;
     try {
         const res = await fetch(url);
         const data = await res.json();
-        // v5 returns array inside "symbol" objects
-        return data.map(item=>({
+        return data.map(item => ({
             ticker: item.symbol,
-            company: item.company,
-            sector: item.sector || "Unknown",
-            datetime: item.date + "T" + (item.time==="bmo"?"07:00":"16:00"),
-            when: item.time==="bmo"?"BMO":"AMC",
-            iv: "N/A",
-            move: "N/A"
+            company: item.symbol, // fallback if no profile API
+            sector: "Unknown",
+            datetime: item.date + "T09:00", // default 9am
+            epsActual: item.epsActual,
+            epsEstimated: item.epsEstimated,
+            revenueActual: item.revenueActual,
+            revenueEstimated: item.revenueEstimated
         }));
     } catch(e) {
-        console.error("FMP fetch error:",e);
+        console.error("FMP fetch error:", e);
         return [];
     }
 }
 
 // ------------- Rendering -----------------
 function groupByWeek(data, weekStart){
-    const days = Array.from({length:7},()=>({BMO:[],AMC:[]}));
+    const days = Array.from({length:7},()=>[]);
     data.forEach(item=>{
         const dt=toDate(item.datetime);
         for(let i=0;i<7;i++){
             const day = addDays(weekStart,i);
-            if(sameDay(day,dt)){
-                if(item.when==="BMO") days[i].BMO.push(item);
-                else days[i].AMC.push(item);
-            }
+            if(sameDay(day,dt)) days[i].push(item);
         }
     });
     return days;
@@ -82,23 +79,19 @@ function renderCalendar(data){
         header.innerHTML = `<div>${formatShort(dayDate)}</div><div>${dayDate.toLocaleDateString()}</div>`;
         dayRow.appendChild(header);
 
-        // Sessions BMO / AMC side by side
-        ["BMO","AMC"].forEach(sessionType=>{
-            const session = document.createElement('div');
-            session.className='session';
-            session.innerHTML=`<h4>${sessionType==="BMO"?"Before Market":"After Market"} (${sessionType})</h4>`;
-            if(days[i][sessionType].length===0){
-                const e = document.createElement('div'); e.className='empty';
-                e.textContent=`— No ${sessionType} reports`;
-                session.appendChild(e);
-            } else {
-                days[i][sessionType].forEach(item=>{
-                    session.appendChild(createCompanyCard(item));
-                });
-            }
-            dayRow.appendChild(session);
-        });
+        const session = document.createElement('div');
+        session.className='session';
 
+        if(days[i].length===0){
+            const e = document.createElement('div'); e.className='empty';
+            e.textContent=`— No earnings`;
+            session.appendChild(e);
+        } else {
+            days[i].forEach(item=>{
+                session.appendChild(createCompanyCard(item));
+            });
+        }
+        dayRow.appendChild(session);
         calendarEl.appendChild(dayRow);
     }
 
@@ -108,11 +101,11 @@ function renderCalendar(data){
 
 function createCompanyCard(item){
     const card = document.createElement('div'); card.className='card'; card.tabIndex=0;
-    const badge = document.createElement('div'); badge.className='badge ' + (item.when==='BMO'?'bmo':'amc'); badge.textContent=item.ticker;
+    const badge = document.createElement('div'); badge.className='badge'; badge.textContent=item.ticker;
     const meta = document.createElement('div'); meta.className='meta';
     meta.innerHTML=`<div class="row"><div class="ticker">${item.company}</div><div class="sector">${item.sector}</div></div>
-                     <div class="row"><div class="time">${item.when} • ${formatTime(toDate(item.datetime))}</div>
-                     <div class="iv">IV: ${item.iv}</div></div>`;
+                     <div class="row"><div class="time">${formatTime(toDate(item.datetime))}</div>
+                     <div class="iv">EPS est: ${item.epsEstimated || "N/A"}</div></div>`;
     card.appendChild(badge); card.appendChild(meta);
     card.addEventListener('click',()=>showDetails(item));
     card.addEventListener('keypress', e=>{if(e.key==='Enter') showDetails(item);});
@@ -122,18 +115,4 @@ function createCompanyCard(item){
 function showDetails(item){
     const dt = toDate(item.datetime);
     detailsPanel.innerHTML = `<h3>${item.company} (${item.ticker})</h3>
-        <div>${item.sector} • ${item.when} • ${formatShort(dt)} ${formatTime(dt)}</div>
-        <div>IV: ${item.iv} • Expected Move: ${item.move}</div>`;
-}
-
-// ------------- Controls -----------------
-prevBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,-7);renderCalendar(earningsData);});
-nextBtn.addEventListener('click',()=>{currentWeekStart=addDays(currentWeekStart,7);renderCalendar(earningsData);});
-todayBtn.addEventListener('click',()=>{currentWeekStart=startOfWeek(new Date());renderCalendar(earningsData);});
-weekPicker.addEventListener('change', e=>{const d=new Date(e.target.value);if(!isNaN(d)){currentWeekStart=startOfWeek(d);renderCalendar(earningsData);}});
-
-// ------------- Init -----------------
-(async function init(){
-    earningsData = await fetchEarnings();
-    renderCalendar(earningsData);
-})();
+        <div>${item.sector} • ${formatShort(dt)} ${formatTime(dt
