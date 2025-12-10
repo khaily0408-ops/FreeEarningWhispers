@@ -3,8 +3,6 @@
   --card:#0b1220;
   --muted:#9aa6b2;
   --accent:#2dd4bf;
-  --bmo:#a7f3eb;
-  --amc:#ffd8b5;
   --glass: rgba(255,255,255,0.03);
   --card-border: rgba(255,255,255,0.04);
   --radius:12px;
@@ -37,7 +35,7 @@ body{
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .btn{
   background:var(--glass);
-  color:var(--bmo);
+  color:var(--accent);
   border:1px solid var(--card-border);
   padding:8px 12px;
   border-radius:10px;
@@ -56,7 +54,7 @@ body{
 }
 .day{
   display:flex;
-  flex-direction:row; /* BMO/AMC side by side */
+  flex-direction:column;
   gap:12px;
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
@@ -64,12 +62,10 @@ body{
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
 }
 .day-header{
-  min-width:120px;
   font-weight:700;
-  margin-right:12px;
+  margin-bottom:8px;
 }
 .session{
-  flex:1;
   display:flex;
   flex-direction:column;
   gap:6px;
@@ -99,9 +95,8 @@ body{
   padding:4px 6px;
   text-align:center;
   color:#04231d;
+  background:#2dd4bf;
 }
-.badge.bmo{background:#a7f3eb;color:#03261c}
-.badge.amc{background:#ffd8b5;color:#3b2000}
 .meta{
   display:flex;
   flex-direction:column;
@@ -126,9 +121,7 @@ body{
 
 @media (max-width:900px){
   .day{flex-direction:column}
-  .day-header{margin-bottom:6px}
 }
 @media (max-width:480px){
   .day{flex-direction:column}
-  .day-header{margin-bottom:6px}
 }
