@@ -25,18 +25,19 @@ function formatShort(date){return date.toLocaleDateString(undefined,{weekday:'sh
 function formatTime(date){return date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});}
 function toDate(d){return typeof d==='string'?new Date(d):d;}
 
-// -------------- Fetch FMP Earnings -----------------
+// -------------- Fetch FMP v5 Earnings -----------------
 async function fetchEarnings() {
     const today = new Date();
-    const from = today.toISOString().slice(0,10);
+    const from = addDays(today,-7).toISOString().slice(0,10);
     const to = addDays(today,14).toISOString().slice(0,10);
-    const url = `https://financialmodelingprep.com/api/v3/earning_calendar?from=${from}&to=${to}&apikey=${API_KEY}`;
+    const url = `https://financialmodelingprep.com/api/v5/earnings-calendar?from=${from}&to=${to}&apikey=${API_KEY}`;
     try {
         const res = await fetch(url);
         const data = await res.json();
+        // v5 returns array inside "symbol" objects
         return data.map(item=>({
             ticker: item.symbol,
-            company: item.companyName,
+            company: item.company,
             sector: item.sector || "Unknown",
             datetime: item.date + "T" + (item.time==="bmo"?"07:00":"16:00"),
             when: item.time==="bmo"?"BMO":"AMC",
