@@ -1,45 +1,38 @@
-import { GoogleGenAI } from '@google/genai';
+// api/fetchEarnings.js
+import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "API key missing" });
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: "API key not set in environment variables" });
+  }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
-
     const prompt = `
-      Search for "most anticipated earnings reports" for current + next week.
-      Include 15-20 major companies.
-      Output strictly as:
+      Search for the most anticipated earnings reports for this week and next week.
+      Find at least 15-20 major companies reporting.
+
+      For each company, output in this strict format:
       DATA_ROW: YYYY-MM-DD | TICKER | COMPANY_NAME | SECTOR | TIME | IV
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { tools: [{ googleSearch: {} }] }
-    });
+    const response = await fetch(
+      "https://api.generativeai.googleapis.com/v1beta2/models/gemini-2.5-flash:generateText",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GEMINI_API_KEY}`,
+        },
+        body: JSON.stringify({ prompt, maxOutputTokens: 500 }),
+      }
+    );
 
-    const text = response.text || "";
-    const lines = text.split('\n').filter(l => l.startsWith("DATA_ROW:"));
-    
-    const earnings = lines.map(line => {
-      const parts = line.replace("DATA_ROW:", "").split("|").map(p => p.trim());
-      return {
-        date: parts[0],
-        ticker: parts[1],
-        companyName: parts[2],
-        sector: parts[3],
-        time: parts[4],
-        iv: parts[5]
-      };
-    });
-
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate'); // cache 1 min
-    res.status(200).json(earnings);
-
-  } catch (err) {
-    console.error(err);
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.[0]?.text || "";
+    res.status(200).json({ rawText: text });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Failed to fetch earnings" });
   }
 }
