@@ -34,7 +34,6 @@ async function fetchEarnings() {
     try {
         const res = await fetch(url);
         const data = await res.json();
-        // normalize
         return data.map(item=>({
             ticker: item.symbol,
             company: item.companyName,
@@ -69,29 +68,39 @@ function groupByWeek(data, weekStart){
 function renderCalendar(data){
     calendarEl.innerHTML="";
     const days = groupByWeek(data,currentWeekStart);
+
     for(let i=0;i<7;i++){
         const dayDate = addDays(currentWeekStart,i);
-        const dayCol = document.createElement('div'); dayCol.className='day';
-        const head = document.createElement('div'); head.className='date';
-        head.innerHTML = `<h3>${formatShort(dayDate)}</h3><span>${dayDate.toLocaleDateString()}</span>`;
-        dayCol.appendChild(head);
 
+        const dayRow = document.createElement('div');
+        dayRow.className = 'day';
+
+        // Day header
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.innerHTML = `<div>${formatShort(dayDate)}</div><div>${dayDate.toLocaleDateString()}</div>`;
+        dayRow.appendChild(header);
+
+        // Sessions BMO / AMC side by side
         ["BMO","AMC"].forEach(sessionType=>{
-            const session = document.createElement('div'); session.className='session';
+            const session = document.createElement('div');
+            session.className='session';
             session.innerHTML=`<h4>${sessionType==="BMO"?"Before Market":"After Market"} (${sessionType})</h4>`;
             if(days[i][sessionType].length===0){
-                const e = document.createElement('div'); e.className='empty'; e.textContent=`— No ${sessionType} reports`;
+                const e = document.createElement('div'); e.className='empty';
+                e.textContent=`— No ${sessionType} reports`;
                 session.appendChild(e);
             } else {
                 days[i][sessionType].forEach(item=>{
                     session.appendChild(createCompanyCard(item));
                 });
             }
-            dayCol.appendChild(session);
+            dayRow.appendChild(session);
         });
 
-        calendarEl.appendChild(dayCol);
+        calendarEl.appendChild(dayRow);
     }
+
     weekPicker.value = currentWeekStart.toISOString().slice(0,10);
     detailsPanel.innerHTML=`<div style="color:var(--muted)">Click a company for details</div>`;
 }
