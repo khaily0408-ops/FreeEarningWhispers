@@ -3,12 +3,10 @@
   --card:#0b1220;
   --muted:#9aa6b2;
   --accent:#2dd4bf;
-  --bmo:#e6fffa;
-  --amc:#fff7ed;
+  --bmo:#a7f3eb;
+  --amc:#ffd8b5;
   --glass: rgba(255,255,255,0.03);
   --card-border: rgba(255,255,255,0.04);
-  --danger:#ff6b6b;
-  --ok:#60a5fa;
   --radius:12px;
   --gap:12px;
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -26,7 +24,6 @@ body{
   padding:18px;
 }
 
-/* Topbar */
 .topbar{
   display:flex;
   align-items:center;
@@ -50,32 +47,11 @@ body{
 .week-picker{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .week-picker input{background:transparent;color:inherit;border:1px solid var(--card-border);padding:6px;border-radius:8px}
 
-/* Layout */
-.container{
+/* Calendar Grid */
+.calendar-grid{
   display:grid;
-  grid-template-rows:auto 1fr auto;
+  grid-template-columns:repeat(7, 1fr); /* equal width columns */
   gap:14px;
-  max-width:1200px;
-  margin:0 auto;
-}
-
-/* Legend */
-.legend{
-  display:flex;
-  align-items:center;
-  gap:20px;
-  justify-content:space-between;
-  background:transparent;
-  color:var(--muted);
-  font-size:13px;
-}
-
-/* Calendar grid */
-.calendar{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:14px;
-  margin-top:8px;
 }
 .day{
   background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
@@ -95,10 +71,9 @@ body{
 .date h3{margin:0;font-size:14px}
 .date span{font-size:12px;color:var(--muted)}
 
-/* BMO/AMC sections in each day */
 .session{
   margin-top:6px;
-  padding:8px;
+  padding:6px;
   border-radius:10px;
   background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
   border:1px dashed rgba(255,255,255,0.02);
@@ -108,13 +83,12 @@ body{
 .session h4{margin:0 0 8px 0;font-size:13px}
 .session .empty{color:var(--muted);font-size:13px}
 
-/* Company card */
 .card{
   display:flex;
   gap:8px;
   align-items:flex-start;
-  padding:8px;
-  margin-bottom:8px;
+  padding:6px;
+  margin-bottom:6px;
   border-radius:10px;
   background:linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
   border:1px solid rgba(255,255,255,0.02);
@@ -122,11 +96,11 @@ body{
 }
 .card:hover{transform:translateY(-2px)}
 .badge{
-  min-width:56px;
+  min-width:50px;
   font-weight:700;
   font-size:12px;
   border-radius:8px;
-  padding:6px 8px;
+  padding:4px 6px;
   text-align:center;
   color:#04231d;
 }
@@ -135,16 +109,15 @@ body{
 .meta{
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:2px;
   flex:1;
 }
 .meta .row{display:flex;justify-content:space-between;align-items:center}
 .ticker{font-weight:800}
 .sector{font-size:12px;color:var(--muted)}
-.iv{font-weight:700}
-.move{font-size:13px;color:var(--ok)}
+.time{font-size:12px;color:var(--muted)}
+.iv, .move{font-size:12px;color:var(--accent)}
 
-/* details panel */
 .details{
   margin-top:10px;
   padding:10px;
@@ -155,13 +128,12 @@ body{
   font-size:13px;
 }
 
-/* Responsive */
 @media (max-width:900px){
-  .calendar{grid-template-columns:repeat(2,1fr)}
+  .calendar-grid{grid-template-columns:repeat(2,1fr)}
   .topbar{flex-direction:column;align-items:flex-start;gap:10px}
 }
 @media (max-width:480px){
-  .calendar{grid-template-columns:1fr}
+  .calendar-grid{grid-template-columns:1fr}
   .controls{flex-wrap:wrap}
   .brand h1{font-size:18px}
   .btn{padding:6px 8px}
