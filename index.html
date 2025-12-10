@@ -1,16 +1,16 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Earnings Calendar — Static Demo</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earnings Calendar — Live FMP</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <h1>Earnings Calendar</h1>
-      <small>Static client-only demo — week view • BMO / AMC grouped</small>
+      <small>Live data from Financial Modeling Prep • BMO / AMC grouped</small>
     </div>
 
     <div class="controls">
@@ -25,34 +25,16 @@
   </header>
 
   <main class="container">
-    <section class="legend">
-      <div><strong>Legend:</strong> BMO = Before Market Open, AMC = After Market Close</div>
-      <div class="note">
-        Expected move is estimated from IV and price using a 1 trading-day move assumption:
-        <code>move ≈ price × (IV/100) × sqrt(1/252)</code>. This is a simple approximation.
-      </div>
-      <div class="upload">
-        <label class="btn file-btn">
-          Upload JSON (optional)
-          <input id="fileInput" type="file" accept=".json" />
-        </label>
-        <button id="resetData" class="btn">Reset demo data</button>
-      </div>
-    </section>
-
-    <section id="calendar" class="calendar"></section>
-
+    <section id="calendar" class="calendar-grid"></section>
     <section class="details" id="detailsPanel" aria-live="polite">
-      <!-- optional detail when clicking a company -->
+      <div style="color:var(--muted)">Click a company for details</div>
     </section>
   </main>
 
   <footer class="footer">
-    <small>
-      Demo app • All computations are client-side. For real use replace the demo dataset with live data.
-    </small>
+    <small>Live demo using Financial Modeling Prep API • Fully client-side</small>
   </footer>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
