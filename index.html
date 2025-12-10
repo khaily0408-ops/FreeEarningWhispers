@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Earnings Calendar — Static Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Earnings Calendar</h1>
+      <small>Static client-only demo — week view • BMO / AMC grouped</small>
+    </div>
+
+    <div class="controls">
+      <button id="prevWeek" class="btn">◀ Prev</button>
+      <button id="todayWeek" class="btn">This Week</button>
+      <button id="nextWeek" class="btn">Next ▶</button>
+      <label class="week-picker">
+        Week start:
+        <input type="date" id="weekStartPicker" />
+      </label>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="legend">
+      <div><strong>Legend:</strong> BMO = Before Market Open, AMC = After Market Close</div>
+      <div class="note">
+        Expected move is estimated from IV and price using a 1 trading-day move assumption:
+        <code>move ≈ price × (IV/100) × sqrt(1/252)</code>. This is a simple approximation.
+      </div>
+      <div class="upload">
+        <label class="btn file-btn">
+          Upload JSON (optional)
+          <input id="fileInput" type="file" accept=".json" />
+        </label>
+        <button id="resetData" class="btn">Reset demo data</button>
+      </div>
+    </section>
+
+    <section id="calendar" class="calendar"></section>
+
+    <section class="details" id="detailsPanel" aria-live="polite">
+      <!-- optional detail when clicking a company -->
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>
+      Demo app • All computations are client-side. For real use replace the demo dataset with live data.
+    </small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
